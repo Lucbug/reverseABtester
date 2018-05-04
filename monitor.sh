@@ -9,7 +9,7 @@ for (( ; ; )); do
     curl $URL -L --compressed -s > new.html
     DIFF_OUTPUT="$(diff new.html old.html)"
     if [ "0" != "${#DIFF_OUTPUT}" ]; then
-        echo 'Visit it at <a href="$URL">$URL</a>' | mail -s "Web page changed" $USERNAME
+        echo "Visit it at <a href=" $URL ">" "$URL</a>" | mail -s "Web page changed" -a "Content-type: text/html;" $USERNAME
         sleep 1800
     fi
 done
