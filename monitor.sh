@@ -9,10 +9,10 @@ for (( ; ; )); do
     curl $URL -L --compressed -s > new.html
     DIFF_OUTPUT="$(diff new.html old.html)"
     if [ "0" != "${#DIFF_OUTPUT}" ]; then
-        sendEmail -f $USERNAME -s smtp.gmail.com:587 \
-            -xu $USERNAME -xp $PASSWORD -t $USERNAME \
+        mail \
+            -t $USERNAME \
             -o tls=yes -u "Web page changed" \
-            -m "Visit it at $URL"
-        sleep 10
+            -m 'Visit it at <a href="$URL">$URL</a>'
+        sleep 
     fi
 done
