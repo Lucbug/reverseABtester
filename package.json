@@ -1,0 +1,35 @@
+{
+  "name": "reverseabtester",
+  "version": "0.2",
+  "description": "Node js script to take screenshot of webpage at proposed intervals",
+  "main": "puppeteer.js",
+  "scripts": {
+    "start": "node puppeteer.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lucbug/reverseABtester.git"
+  },
+  "keywords": [
+    "script",
+    "node",
+    "js",
+    "screenshot",
+    "puppeteer",
+    "A/B testing",
+    "marketing",
+    "product owner",
+    "product manager",
+    "PO",
+    "PM"
+  ],
+  "author": "Lucas Bugnazet",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lucbug/reverseABtester/issues"
+  },
+  "homepage": "https://github.com/Lucbug/reverseABtester#readme",
+  "dependencies": {
+    "puppeteer": "^1.9.0",
+  }
+}
