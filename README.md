@@ -54,3 +54,15 @@ After a while of fiddling around here are some findings :
 - Puppeteer for navigation and screenshot
 - ImageMagick for image manipulation
 - A web interface to choose what URL, what size you want to compare screenshots, and at which interval
+
+
+## Packages
+### Installed
+- Node
+- Puppeteer
+
+### Looking into
+- Resemble.js [https://github.com/HuddleEng/Resemble.js]
+- looks-same [https://github.com/gemini-testing/looks-same]
+- pixelmatch [https://github.com/mapbox/pixelmatch]
+- ImageMagick
