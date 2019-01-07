@@ -1,27 +1,106 @@
 const puppeteer = require('puppeteer');
 const devices = require('puppeteer/DeviceDescriptors');
-const sleep = require('util').promisify(setTimeout);
+const globals = require('./config');
 
-// XXX 1. Get URL to take screenshot
-let URL = "http://lucasbugnazet.com";
+// var allAnchorsConfirmed = false;
 
-// XXX 2. Get viewport width
-// height doesn't matter since we will take a full size screenshot
-let viewport = {width: 1920, height: 1080};
-var wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-function delay(timeout) {
-    return wait(timeout).then(() => console.log('waited for ' + timeout + ' ms'));
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-const delay2 = async (timeout) => {
-  await wait(timeout);
-  console.log('waited for ' + timeout + ' ms');
+async function screenshot(page) {
+    console.log("taking screenshot");
+    const screenshot = page.screenshot({
+        fullPage: true,
+        type: 'png',
+        path: Date.now() + '.png'
+    });
 };
 
-function gotopage(URL, viewport) {
+async function evaluate(page, selector) {
+    console.log("evaluating");
+
+    await page.exposeFunction('evallog', (data) => {
+        console.log(data);
+        return data;
+    });
+
+    const eval = await page.evaluate(selector => {
+        const anchors = document.querySelector(selector);
+        console.log(anchors);
+        const offsets = anchors.getBoundingClientRect();
+        // Find out how many parents until body tag and compare bounding client rects to get minimum size;
+        let elementNest = anchors;
+        let smallestVisibleWidth = offsets.width;
+        let smallestVisibleHeight = offsets.height;
+        // let shortestDistanceTop = offsets.top;
+        // let shortestDistanceLeft = offsets.left;
+        while ('BODY' != elementNest.tagName) {
+            if(elementNest.getBoundingClientRect().width < smallestVisibleWidth || elementNest.getBoundingClientRect().height < smallestVisibleHeight) {
+                let prevBorderStyle = elementNest.style.border;
+                elementNest.style.border = "thick dashed blue";
+                let excludeAreaConfirm = confirm('Does that seem right?\n' + elementNest.getBoundingClientRect().width + '*' + elementNest.getBoundingClientRect().height);
+                if (true === excludeAreaConfirm) {
+                    smallestVisibleWidth = elementNest.getBoundingClientRect().width;
+                    smallestVisibleHeight = elementNest.getBoundingClientRect().height;
+                    // shortestDistanceTop = elementNest.getBoundingClientRect().top;
+                    // shortestDistanceLeft = elementNest.getBoundingClientRect().left;
+                    break;
+                };
+                elementNest.style.border = prevBorderStyle;
+            };
+            elementNest = elementNest.parentElement;
+        };
+        let svgContainer = document.createElement("div");
+        svgContainer.setAttribute("class", "svg-container");
+        svgContainer.style.position = 'absolute';
+        svgContainer.style.top = 0 + "px";
+        svgContainer.style.left = 0 + "px";
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg');
+        var rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+        svg.setAttribute("width", smallestVisibleWidth) //Set svg's data
+        svg.setAttribute("height", smallestVisibleHeight) //Set svg's data
+        rect.setAttribute("width", "100%") //Set rect's data
+        rect.setAttribute("height", "100%") //Set rect's data
+        rect.setAttribute("fill", "red") //Set rect's data
+        svg.appendChild(rect);
+        svgContainer.appendChild(svg);
+        anchors.parentElement.appendChild(svgContainer);
+
+
+
+        //DO NOT USE THIS  createSVG(anchors, smallestVisibleWidth, smallestVisibleHeight);
+        return anchors;
+
+        // The page.evaluate function should return all divs (and respective classes) that have been excluded from the screenshot ==> Or should it?
+
+    }, selector);
+};
+
+function createSVG(anchors, width, height) {
+    console.log("creating SVG");
+    let svgContainer = document.createElement("div");
+    svgContainer.setAttribute("class", "svg-container");
+    svgContainer.style.position = 'absolute';
+    svgContainer.style.top = 0 + "px";
+    svgContainer.style.left = 0 + "px";
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg');
+    var rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+    svg.setAttribute("width", width) //Set svg's data
+    svg.setAttribute("height", height) //Set svg's data
+    rect.setAttribute("width", "100%") //Set rect's data
+    rect.setAttribute("height", "100%") //Set rect's data
+    rect.setAttribute("fill", "red") //Set rect's data
+    svg.appendChild(rect);
+    svgContainer.appendChild(svg);
+    anchors.parentElement.appendChild(svgContainer);
+    return svgContainer;
+};
+
+function gotopage(URL, viewport, headless, devtools) {
     (async () => {
-        const browser = await puppeteer.launch({headless: false, devtools: true});
+        console.log("going to page");
+        const browser = await puppeteer.launch({headless: headless, devtools: devtools});
         let pages = await browser.pages();
         const page = await pages[0];
         await page.setViewport(viewport);
@@ -41,46 +120,18 @@ function gotopage(URL, viewport) {
         // ====> this will require imagemagick ?
         // ====> or can I just adjust the CSS in the page itself ?
 
-        const resultsSelector = '#heroVideo';
-        await page.waitForSelector(resultsSelector);
+        await page.waitForSelector(globals().resultsSelector);
 
-        const eval = await page.evaluate(resultsSelector => {
-            delay(5000);
-            const anchors = document.querySelector(resultsSelector);
-            // console.log(anchors);
-            const offsets = anchors.getClientRects()[0];
-            console.log(offsets);
-            console.log(anchors.getBoundingClientRect());
-            console.log(anchors.getBoundingClientRect());
-            let svgContainer = document.createElement("div");
-            svgContainer.setAttribute("class", "svg-container");
-            svgContainer.style.position = 'absolute';
-            svgContainer.style.top = offsets.top + "px";
-            svgContainer.style.left = offsets.left + "px";
-            svgContainer.style.zIndex = 999999999999999999;
-            var svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg');
-            var rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-            svg.setAttribute("width", offsets.width) //Set svg's data
-            svg.setAttribute("height", offsets.height) //Set svg's data
-            rect.setAttribute("width", "100%") //Set rect's data
-            rect.setAttribute("height", "100%") //Set rect's data
-            rect.setAttribute("fill", "red") //Set rect's data
-            svg.appendChild(rect);
-            svgContainer.appendChild(svg);
-            document.body.appendChild(svgContainer);
+        evaluate(page, globals().resultsSelector);
 
-            return anchors;
-        }, resultsSelector);
-
-        // const screenshot = await page.screenshot({
-        //     fullPage: true,
-        //     type: 'png',
-        //     path: Date.now() + '.png'
-        // });
+        // let screenshotConfirm = confirm('Take screenshot?');
+        // if (true === screenshotConfirm) {
+            await screenshot(page);
+        // }
 
         // await browser.close();
 
     })();
 };
 
-gotopage(URL, viewport);
+gotopage(globals().URL, globals().viewport, globals().headless, globals().devtools);

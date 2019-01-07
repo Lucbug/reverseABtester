@@ -7,9 +7,12 @@ On linux environments, you can use services like sendEmail and ssmtp (https://do
 - Sleep command is in seconds.
 
 # Starting the script
-## From the command line
+## From the command line & a Linux distro
 - `chmod +x script.sh` then `./monitor.sh`
 - `nohup ./monitor.sh &` for background stuff (http://manpages.ubuntu.com/manpages/xenial/fr/man1/nohup.1.html)
+
+## With node (tmp as of 08/18)
+- `node puppeteer.js`
 
 ## On boot
 We are using a linux environment and systemd.
@@ -47,6 +50,7 @@ Now the script will launch on every boot of the machine.
 
 # About what's inside
 After a while of fiddling around here are some findings :
+- I originally ran the scripts from my machine and automated the daemon on boot. The script would then run at start up and continue to check for differences in the code every hour. I then found it is best used on a dedicated server.
 - PhantomJS is not maintained anymore since the launch of headless Chrome (59 and 60 I believe)
 - Puppeteer is what seems to have replaced Phantom and Casper altogether as well as having some really interesing features so I may as well give it a go.
 
