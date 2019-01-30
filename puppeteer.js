@@ -20,14 +20,10 @@ async function screenshot(page) {
 async function evaluate(page, selector) {
     console.log("evaluating");
 
-    await page.exposeFunction('evallog', (data) => {
-        console.log(data);
-        return data;
-    });
+    let cancel = false;
 
     const eval = await page.evaluate(selector => {
         const anchors = document.querySelector(selector);
-        console.log(anchors);
         const offsets = anchors.getBoundingClientRect();
         // Find out how many parents until body tag and compare bounding client rects to get minimum size;
         let elementNest = anchors;
@@ -35,6 +31,7 @@ async function evaluate(page, selector) {
         let smallestVisibleHeight = offsets.height;
         // let shortestDistanceTop = offsets.top;
         // let shortestDistanceLeft = offsets.left;
+
         while ('BODY' != elementNest.tagName) {
             if(elementNest.getBoundingClientRect().width < smallestVisibleWidth || elementNest.getBoundingClientRect().height < smallestVisibleHeight) {
                 let prevBorderStyle = elementNest.style.border;
@@ -48,8 +45,14 @@ async function evaluate(page, selector) {
                     break;
                 };
                 elementNest.style.border = prevBorderStyle;
+
             };
             elementNest = elementNest.parentElement;
+            if (('BODY' == elementNest) && (false == excludeAreaConfirm)) {
+                console.log("Sorry, couldn't find what you were looking for");
+                cancel = true;
+                break;
+            };
         };
         let svgContainer = document.createElement("div");
         svgContainer.setAttribute("class", "svg-container");
@@ -67,14 +70,20 @@ async function evaluate(page, selector) {
         svgContainer.appendChild(svg);
         anchors.parentElement.appendChild(svgContainer);
 
-
-
-        //DO NOT USE THIS  createSVG(anchors, smallestVisibleWidth, smallestVisibleHeight);
         return anchors;
 
         // The page.evaluate function should return all divs (and respective classes) that have been excluded from the screenshot ==> Or should it?
 
     }, selector);
+
+    // let screenshotConfirm = confirm('Take screenshot?');
+    // if (true === screenshotConfirm) {
+    if (false == cancel){
+        await screenshot(page);
+    } else {
+        console.log("couldn't take a screenshot cause it has been cancelled");
+    };
+    // }
 };
 
 function createSVG(anchors, width, height) {
@@ -123,11 +132,6 @@ function gotopage(URL, viewport, headless, devtools) {
         await page.waitForSelector(globals().resultsSelector);
 
         evaluate(page, globals().resultsSelector);
-
-        // let screenshotConfirm = confirm('Take screenshot?');
-        // if (true === screenshotConfirm) {
-            await screenshot(page);
-        // }
 
         // await browser.close();
 
